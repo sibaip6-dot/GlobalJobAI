@@ -1,0 +1,46 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Project Structure
+        run: |
+          mkdir -p app/src/main/java/com/globalcareer/ai
+          mkdir -p app/src/main/res/values
+
+          if [ -f "AndroidManifest.xml" ]; then mv AndroidManifest.xml app/src/main/; fi
+          if [ -f "MainActivity.kt" ]; then mv MainActivity.kt app/src/main/java/com/globalcareer/ai/; fi
+          if [ -f "styles.xml" ]; then mv styles.xml app/src/main/res/values/; fi
+
+      - name: Create Gradle Wrapper
+        run: |
+          gradle wrapper
+          chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GlobalJobAI-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
